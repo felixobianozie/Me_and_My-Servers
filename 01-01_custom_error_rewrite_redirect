@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+# Create custom error and rewrite pages
+mkdir -p /var/www/error;
+touch /var/www/error/404.html;
+touch /var/www/html/rewrite.html;
+echo "Your rewrite request has been implemented!" > /var/www/html/rewrite.html;
+echo "Ceci n'est pas une page" > /var/www/error/404.html;
+
+SERVER_CONFIG=\
+"server {
+	listen 80 default_server;
+	listen [::]:80 default_server;
+	root /var/www/html;
+	index index.html index.htm index.nginx-debian.html;
+	server_name _;
+
+	location / {
+		try_files \$uri \$uri/ =404;
+		error_page 404 /404.html;
+	}
+
+	location /redirect_me{
+		return 301 https://github.com/felixobianozie;
+	}
+	
+	location /rewrite_me{
+                rewrite / /rewrite.html;
+        }
+	
+	location /404.html{
+                root /var/www/error;
+                index 404.html;
+        }
+
+}"
+
+echo -e '$SERVER_CONFIG' > /etc/nginx/sites-enabled/default
+
+# Start or restart to sync configuration
+if [ "$(pgrep -c nginx)" -le 0 ]; then
+	service nginx start
+else
+	service nginx restart
+fi
